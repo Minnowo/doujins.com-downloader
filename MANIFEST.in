@@ -1,0 +1,5 @@
+include README.rst
+include requirements.txt
+include doujinsDotcom/viewer/*
+include doujinsDotcom/viewer/default/*
+include doujinsDotcom/viewer/minimal/*
