@@ -4,11 +4,11 @@ import datetime
 try:
     from constants import BASE_URL
     from logger import logger
-    from helpers import Format_Filename
+    from helpers import format_filename
 except ImportError:
-    from doujinDotcom.constants import BASE_URL
-    from doujinDotcom.logger import logger
-    from doujinDotcom.helpers import Format_Filename
+    from doujinsDotcom.constants import BASE_URL
+    from doujinsDotcom.logger import logger
+    from doujinsDotcom.helpers import format_filename
 
 class DoujinshiInfo(dict):
     def __init__(self, **kwargs):
@@ -39,7 +39,7 @@ class Doujinshi(object):
         _name_format = name_format.replace('%a', self.info.artists)
         _name_format = _name_format.replace('%t', self.name)
         _name_format = _name_format.replace('%p', self.pretty_name)
-        self.formated_name = Format_Filename(_name_format)
+        self.formated_name = format_filename(_name_format)
 
         self.table = [
             ["URL", self.url],
@@ -51,16 +51,16 @@ class Doujinshi(object):
         ]
 
 
-    def Update_Name_Format(self, new_name_format):
+    def update_name_format(self, new_name_format):
         """Updates the name format, and the formated name."""
         self.name_format = new_name_format
         _name_format = new_name_format.replace('%a', self.info.artists)
         _name_format = _name_format.replace('%t', self.name)
         _name_format = _name_format.replace('%p', self.pretty_name)
-        self.formated_name = Format_Filename(_name_format)
+        self.formated_name = format_filename(_name_format)
 
 
-    def Update(self):
+    def update(self):
         """Updates the page count, url, and table."""
         self.page_count = len(self.pages)
         self.table = [
@@ -73,7 +73,7 @@ class Doujinshi(object):
         ]
 
     
-    def Download(self):
+    def download(self):
         """Begin downloading the doujin."""
 
         logger.info('Starting to download doujinshi: %s' % self.name)
@@ -90,7 +90,7 @@ class Doujinshi(object):
         for i in self.pages:
             download_queue.append(i)
 
-        self.downloader.Download(download_queue, self.formated_name)
+        self.downloader.download(download_queue, self.formated_name)
 
 
 

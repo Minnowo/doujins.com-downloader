@@ -18,15 +18,15 @@ except ImportError:
     from urlparse import urlparse
 
 try:
-    from helpers import Create_Directory, Request_Helper, Create_Directory_From_File_Name, get_url_ext
+    from helpers import create_directory, request_helper, create_directory_from_file_name, get_url_ext
     from constants import IMAGE_URL, CONFIG, BASE_URL
     from doujinshi import Doujinshi, DoujinshiInfo
     from logger import logger
 except ImportError:
-    from doujinDotcom.helpers import Create_Directory, Request_Helper, Create_Directory_From_File_Name, get_url_ext
-    from doujinDotcom.constants import IMAGE_URL, CONFIG, BASE_URL
-    from doujinDotcom.doujinshi import Doujinshi, DoujinshiInfo
-    from doujinDotcom.logger import logger
+    from doujinsDotcom.helpers import create_directory, request_helper, create_directory_from_file_name, get_url_ext
+    from doujinsDotcom.constants import IMAGE_URL, CONFIG, BASE_URL
+    from doujinsDotcom.doujinshi import Doujinshi, DoujinshiInfo
+    from doujinsDotcom.logger import logger
 
 requests.packages.urllib3.disable_warnings()
 
@@ -48,7 +48,7 @@ class Downloader():
         self.timeout = timeout
         self.delay = delay
 
-    def _Download(self, url, folder='', filename='', retried=0, proxy=None):
+    def _download(self, url, folder='', filename='', retried=0, proxy=None):
         if self.delay:
             time.sleep(self.delay)
 
@@ -71,7 +71,7 @@ class Downloader():
                 i = 0
                 while i < 10:
                     try:
-                        response = Request_Helper('get', url, stream=True, timeout=self.timeout, proxies=proxy)
+                        response = request_helper('get', url, stream=True, timeout=self.timeout, proxies=proxy)
                         if response.status_code != 200:
                             raise ImageNotExistsException
 
@@ -113,7 +113,7 @@ class Downloader():
 
         return 1, url
 
-    def Download(self, queue, folder=''):
+    def download(self, queue, folder=''):
         """Start the download queue."""
         folder = str(folder)
 
@@ -122,14 +122,14 @@ class Downloader():
 
         if not os.path.exists(folder):
             logger.warning('Path \'{0}\' does not exist, creating.'.format(folder))
-            if not Create_Directory(folder):
+            if not create_directory(folder):
                 logger.critical("Cannot create output folder, download canceled")
                 return
 
         queue = [(self, url, folder, CONFIG['proxy'], str(index+1)+get_url_ext(url,True)) for index, url in enumerate(queue)]
 
-        pool = multiprocessing.Pool(self.size, _Init_Worker)
-        [pool.apply_async(_Download_Wrapper, args=item) for item in queue]
+        pool = multiprocessing.Pool(self.size, _init_worker)
+        [pool.apply_async(_download_wrapper, args=item) for item in queue]
 
         pool.close()
         pool.join()
@@ -139,7 +139,7 @@ class Downloader():
 
 
     @staticmethod
-    def Get_Douijinshi(url : str) -> Doujinshi:
+    def get_douijinshi(url : str) -> Doujinshi:
         """Gets a Doujinshi object from doujins.com page source"""
 
         info = dict()
@@ -147,7 +147,7 @@ class Downloader():
         doujin = Doujinshi()
         doujin.url = url
 
-        page = Downloader.Get_Doujinshi_Page(url)
+        page = Downloader.get_doujinshi_page(url)
 
         if not page:
             return doujin
@@ -207,16 +207,16 @@ class Downloader():
                 doujin.pages.append(page)
 
         doujin.info = DoujinshiInfo(**info)
-        doujin.Update()
+        doujin.update()
 
         return doujin
     
     @staticmethod
-    def Get_Doujinshi_Page(url : str) -> list:
+    def get_doujinshi_page(url : str) -> list:
         """Downloads the source of the given nhentai page and returns the contents as a byte[] or None."""
 
         try:
-            response = Request_Helper('get', url)
+            response = request_helper('get', url)
             
             if response.status_code == 200:
                 return response.content
@@ -228,25 +228,25 @@ class Downloader():
             else:
                 logger.warning('Slow down and retry ({}) ...'.format(url))
                 time.sleep(1)
-                return Downloader.Get_Doujinshi_Page(str(url))
+                return Downloader.get_doujinshi_page(str(url))
         except:
             return None
 
 
 
-def _Download_Wrapper(obj, url, folder='', proxy=None, filename=''):
+def _download_wrapper(obj, url, folder='', proxy=None, filename=''):
     if sys.platform == 'darwin' or semaphore.get_value():
-        return Downloader._Download(obj, url=url, folder=folder, proxy=proxy, filename=filename)
+        return Downloader._download(obj, url=url, folder=folder, proxy=proxy, filename=filename)
     else:
         return -3, None
     
 
 
-def _Init_Worker():
-    signal.signal(signal.SIGINT, _Subprocess_Signal)
+def _init_worker():
+    signal.signal(signal.SIGINT, _subprocess_signal)
 
 
-def _Subprocess_Signal(signal, frame):
+def _subprocess_signal(signal, frame):
     if semaphore.acquire(timeout=1):
         print('Ctrl-C pressed, exiting sub processes ...')
 

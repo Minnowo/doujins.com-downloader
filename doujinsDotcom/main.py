@@ -10,22 +10,22 @@ try:
     from constants import USER_AGENT ,BASE_URL,LOGIN_URL ,IMAGE_URL, CONFIG
     from doujinshi import DoujinshiInfo, Doujinshi
     from downloader import Downloader
-    from cmdline import ParseArgs, Banner
-    from helpers import Generate_Html_Viewer_, Format_Doujin_String_, serialize_doujinshi, signal_handler
+    from cmdline import parse_args, banner
+    from helpers import generate_html_viewer_, format_doujin_string_, serialize_doujinshi, signal_handler
 except ImportError:
-    from doujinDotcom.logger import logger
-    from doujinDotcom.constants import USER_AGENT ,BASE_URL,LOGIN_URL ,IMAGE_URL, CONFIG
-    from doujinDotcom.doujinshi import DoujinshiInfo, Doujinshi
-    from doujinDotcom.downloader import Downloader
-    from doujinDotcom.cmdline import ParseArgs, Banner
-    from doujinDotcom.helpers import Generate_Html_Viewer_, Format_Doujin_String_, serialize_doujinshi, signal_handler
+    from doujinsDotcom.logger import logger
+    from doujinsDotcom.constants import USER_AGENT ,BASE_URL,LOGIN_URL ,IMAGE_URL, CONFIG
+    from doujinsDotcom.doujinshi import DoujinshiInfo, Doujinshi
+    from doujinsDotcom.downloader import Downloader
+    from doujinsDotcom.cmdline import parse_args, banner
+    from doujinsDotcom.helpers import generate_html_viewer_, format_doujin_string_, serialize_doujinshi, signal_handler
 
 def main():
-    Banner()
+    banner()
 
     downl = Downloader()
     
-    args = ParseArgs(sys.argv[1:])
+    args = parse_args(sys.argv[1:])
 
     if CONFIG['proxy']['http']:
         logger.info('Using proxy: {0}'.format(CONFIG['proxy']['http']))
@@ -38,8 +38,8 @@ def main():
     doujinshi = []
     for url in args.urls:
         logger.info("Fetching page for {}".format(url))
-        d = Downloader.Get_Douijinshi(url)
-        d.Update_Name_Format(args.name_format)
+        d = Downloader.get_douijinshi(url)
+        d.update_name_format(args.name_format)
         doujinshi.append(d)
 
     if args.meta_file:
@@ -56,7 +56,7 @@ def main():
             if args.delay != 0:
                 time.sleep(args.delay) 
 
-            Generate_Html_Viewer_(args.output, Format_Doujin_String_(d, args.sauce_file_output), d, args.html_format, args.generate_meta_file, True) 
+            generate_html_viewer_(args.output, format_doujin_string_(d, args.sauce_file_output), d, args.html_format, args.generate_meta_file, True) 
 
     elif args.download:
 
@@ -66,11 +66,11 @@ def main():
                 time.sleep(args.delay) 
 
             d.downloader = downl
-            d.Download()
-            d.Download()
+            d.download()
+            d.download()
             
             if args.generate_html:
-                Generate_Html_Viewer_(os.path.join(args.output, d.formated_name), "index.html", d, args.html_format, args.generate_meta_file, False)
+                generate_html_viewer_(os.path.join(args.output, d.formated_name), "index.html", d, args.html_format, args.generate_meta_file, False)
 
             elif args.generate_meta_file:
                 serialize_doujinshi(d, args.output)

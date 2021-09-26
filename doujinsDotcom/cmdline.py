@@ -14,11 +14,11 @@ try:
     from logger import logger
     from __init__ import __version__
 except ImportError:
-    from doujinDotcom.constants import ILLEGAL_FILENAME_CHARS, CONFIG, DOUJINS_HOME, DOUJINS_CONFIG_FILE
-    from doujinDotcom.logger import logger
-    from doujinDotcom.__init__ import __version__
+    from doujinsDotcom.constants import ILLEGAL_FILENAME_CHARS, CONFIG, DOUJINS_HOME, DOUJINS_CONFIG_FILE
+    from doujinsDotcom.logger import logger
+    from doujinsDotcom.__init__ import __version__
 
-def Banner():
+def banner():
     logger.info(u'''Doujins.com ver %s: 
  _____                             
 |     \  ___  _   _ _____ _        ____   
@@ -49,7 +49,7 @@ def write_config():
     with open(DOUJINS_CONFIG_FILE, 'w') as f:
         f.write(json.dumps(CONFIG))
 
-def ParseArgs(args):
+def parse_args(args):
     
     parser = argparse.ArgumentParser(description='Doujins.com downloader')
     group = parser.add_mutually_exclusive_group()
