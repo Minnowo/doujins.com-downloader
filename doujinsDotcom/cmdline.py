@@ -67,6 +67,9 @@ def parse_args(args):
     group.add_argument('-m', '--meta-file', dest='meta_file', action='store_true',
         help="generates a .json file with the doujinshi metadata")
 
+    group.add_argument('-gm', '--gen-main', dest='gen_main', action='store_true',
+        help="generates an html page to display doujins in the output directory")
+
 
     parser.add_argument('-F', '--file', type=str, dest='doujin_ids_file', metavar='',
         help='reads doujin urls from a file, ( urls split by line )')
@@ -158,22 +161,23 @@ def parse_args(args):
         write_config()
         sys.exit(0)
 
-    if not args.download and not args.show_info and not args.sauce_file and not args.meta_file:
+    if not args.download and not args.show_info and not args.sauce_file and not args.meta_file and not args.gen_main:
         logger.critical("No operation specified, use -h for help")
         sys.exit(1)
 
-    if not args.urls and not args.doujin_ids_file:
-        logger.critical("No doujinshi ids specified")
-        sys.exit(1)
+    if not args.gen_main:
+        if not args.urls and not args.doujin_ids_file:
+            logger.critical("No doujinshi ids specified")
+            sys.exit(1)
 
-    elif args.urls:
-        _ = [i.strip() for i in args.urls.split(',')]
-        args.urls = set(str(i) for i in _ if i)
-
-    else:
-        with open(args.doujin_ids_file, 'r') as f:
-            _ = [i.strip() for i in f.readlines()]
+        elif args.urls:
+            _ = [i.strip() for i in args.urls.split(',')]
             args.urls = set(str(i) for i in _ if i)
+
+        else:
+            with open(args.doujin_ids_file, 'r') as f:
+                _ = [i.strip() for i in f.readlines()]
+                args.urls = set(str(i) for i in _ if i)
 
 
     if args.output:

@@ -11,14 +11,14 @@ try:
     from doujinshi import DoujinshiInfo, Doujinshi
     from downloader import Downloader
     from cmdline import parse_args, banner
-    from helpers import generate_html_viewer_, format_doujin_string_, serialize_doujinshi, signal_handler
+    from helpers import generate_html_viewer_, format_doujin_string_, serialize_doujinshi, signal_handler, generate_main_html
 except ImportError:
     from doujinsDotcom.logger import logger
     from doujinsDotcom.constants import USER_AGENT ,BASE_URL,LOGIN_URL ,IMAGE_URL, CONFIG
     from doujinsDotcom.doujinshi import DoujinshiInfo, Doujinshi
     from doujinsDotcom.downloader import Downloader
     from doujinsDotcom.cmdline import parse_args, banner
-    from doujinsDotcom.helpers import generate_html_viewer_, format_doujin_string_, serialize_doujinshi, signal_handler
+    from doujinsDotcom.helpers import generate_html_viewer_, format_doujin_string_, serialize_doujinshi, signal_handler, generate_main_html
 
 def main():
     banner()
@@ -26,6 +26,10 @@ def main():
     downl = Downloader()
     
     args = parse_args(sys.argv[1:])
+
+    if args.gen_main:
+        generate_main_html(args.output)
+        return
 
     if CONFIG['proxy']['http']:
         logger.info('Using proxy: {0}'.format(CONFIG['proxy']['http']))

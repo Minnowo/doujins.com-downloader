@@ -14,6 +14,20 @@ except ImportError:
     from doujinsDotcom.constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS, CONFIG
 
 
+def request_helper(method : str, url : str, **kwargs) -> object:
+    session = requests.Session()
+    session.headers.update({
+        'Referer': LOGIN_URL,
+        'User-Agent': USER_AGENT,
+        'Cookie': CONFIG['cookie']
+        })
+    
+    if not kwargs.get('proxies', None):
+        kwargs['proxies'] = CONFIG['proxy']
+
+    return getattr(session, method)(url, verify=False, **kwargs)
+
+
 def format_filename(path : str) -> str:
     """Formats the given path to prevent illegal characters in the filename, removes '.' at the end, 
         and truncates if its longer than 100 chars"""
@@ -59,18 +73,15 @@ def create_directory(path : str) -> bool:
     return os.path.isdir(path)
 
 
-def request_helper(method : str, url : str, **kwargs) -> object:
-    session = requests.Session()
-    session.headers.update({
-        'Referer': LOGIN_URL,
-        'User-Agent': USER_AGENT,
-        'Cookie': CONFIG['cookie']
-        })
-    
-    if not kwargs.get('proxies', None):
-        kwargs['proxies'] = CONFIG['proxy']
+def list_dirs(path : str) -> list:
+    current_directory = os.getcwd()
+    try:
+        os.chdir(path)
+        return next(os.walk('.'))[1]
+    finally:
+        os.chdir(current_directory)
 
-    return getattr(session, method)(url, verify=False, **kwargs)
+
 
 
 def format_doujin_string_(doujin : object, string : str) -> str:
@@ -206,69 +217,126 @@ def serialize_doujinshi(doujinshi, dir, file_name = "metadata.json"):
         with open(out_path, 'w') as f:
             json.dump(metadata, f, separators=(',', ':'), indent=3)
 
-        logger.info('Metadata has been written to \'{0}\\{1}\''.format(dir, file_name))
+        logger.info('Metadata has been written to \'{0}\''.format(out_path))
 
     except Exception as e:
         logger.warning('Writing Metadata failed ({})'.format(str(e)))
 
 
 
-# def generate_main_html(output_dir='./'):
-#     """
-#     Generate a main html to show all the contain doujinshi.
-#     With a link to their `index.html`.
-#     Default output folder will be the CLI path.
-#     """
+def generate_main_html(output_dir='./'):
+    """
+    Generate a main html to show all the contain doujinshi.
+    With a link to their `index.html`.
+    Default output folder will be the CLI path.
+    """
 
-#     image_html = ''
+    image_html = ''
 
-#     main = Read_File('viewer/main.html')
-#     css = Read_File('viewer/main.css')
-#     js = Read_File('viewer/main.js')
+    main = read_file('viewer/main.html')
+    css = read_file('viewer/main.css')
+    js = read_file('viewer/main.js')
 
-#     element = '\n\
-#             <div class="gallery-favorite">\n\
-#                 <div class="gallery">\n\
-#                     <a href="./{FOLDER}/index.html" class="cover" style="padding:0 0 141.6% 0"><img\n\
-#                             src="./{FOLDER}/{IMAGE}" />\n\
-#                         <div class="caption">{TITLE}</div>\n\
-#                     </a>\n\
-#                 </div>\n\
-#             </div>\n'
+    element = '\n\
+            <div class="gallery-favorite">\n\
+                <div class="gallery">\n\
+                    <a href="./{FOLDER}/index.html" class="cover" style="padding:0 0 141.6% 0"><img\n\
+                            src="./{FOLDER}/{IMAGE}" />\n\
+                        <div class="caption">{TITLE}</div>\n\
+                    </a>\n\
+                </div>\n\
+            </div>\n'
 
-#     os.chdir(output_dir)
-#     doujinshi_dirs = next(os.walk('.'))[1]
+    doujinshi_dirs = list_dirs(output_dir)
 
-#     for folder in doujinshi_dirs:
-#         files = os.listdir(folder)
-#         files.sort()
+    for folder in doujinshi_dirs:
 
-#         if 'index.html' in files:
-#             logger.info('Add doujinshi \'{}\''.format(folder))
-#         else:
-#             continue
+        files = os.listdir(os.path.join(output_dir, folder))
+        files.sort()
 
-#         image = files[0]  # 001.jpg or 001.png
-#         if folder is not None:
-#             title = folder.replace('_', ' ')
-#         else:
-#             title = 'nHentai HTML Viewer'
+        if 'index.html' in files:
+            logger.info('Add doujinshi \'{0}{1}\''.format(output_dir,folder))
+        else:
+            continue
 
-#         image_html += element.format(FOLDER=folder, IMAGE=image, TITLE=title)
-#     if image_html == '':
-#         logger.warning('No index.html found, --gen-main paused.')
-#         return
-#     try:
-#         data = main.format(STYLES=css, SCRIPTS=js, PICTURE=image_html)
-#         if sys.version_info < (3, 0):
-#             with open('./main.html', 'w') as f:
-#                 f.write(data)
-#         else:
-#             with open('./main.html', 'wb') as f:
-#                 f.write(data.encode('utf-8'))
-#         shutil.copy(os.path.dirname(__file__) + '/viewer/logo.png', './')
-#         set_js_database()
-#         logger.log(
-#             15, 'Main Viewer has been written to \'{0}main.html\''.format(output_dir))
-#     except Exception as e:
-#         logger.warning('Writing Main Viewer failed ({})'.format(str(e)))
+        image = files[0]  # 001.jpg or 001.png
+        if folder is not None:
+            title = folder.replace('_', ' ')
+        else:
+            title = 'nHentai HTML Viewer'
+
+        image_html += element.format(FOLDER=folder, IMAGE=image, TITLE=title)
+
+    if image_html == '':
+        logger.warning('No index.html found, --gen-main paused.')
+        return
+
+    try:
+        data = main.format(STYLES=css, SCRIPTS=js, PICTURE=image_html)
+        write_text(os.path.join(output_dir,"main.html"), data)
+        set_js_database(output_dir)
+
+        logger.info('Main Viewer has been written to \'{0}main.html\''.format(output_dir))
+    except Exception as e:
+        logger.warning('Writing Main Viewer failed ({})'.format(str(e)))
+
+
+
+
+
+def merge_json(path : str):
+    output_json = []
+
+    doujinshi_dirs = list_dirs(path)
+
+    for folder in doujinshi_dirs:
+        _folder = os.path.join(path, folder)
+        files = os.listdir(_folder)
+
+        if 'metadata.json' not in files:
+            continue
+
+        with open(_folder + '\\metadata.json', 'r') as f:
+            json_dict = json.load(f)
+
+            if 'Pages' in json_dict:
+                del json_dict['Pages']
+
+            json_dict['Folder'] = folder
+            output_json.append(json_dict)
+
+    return output_json
+
+def serialize_unique(lst : list):
+    dictionary = {}
+    parody = []
+    character = []
+    tag = []
+    artist = []
+    group = []
+    for dic in lst:
+        if 'parody' in dic:
+            parody.extend([i for i in dic['parody']])
+        if 'character' in dic:
+            character.extend([i for i in dic['character']])
+        if 'tag' in dic:
+            tag.extend([i for i in dic['tag']])
+        if 'artist' in dic:
+            artist.extend([i for i in dic['artist']])
+        if 'group' in dic:
+            group.extend([i for i in dic['group']])
+    dictionary['parody'] = list(set(parody))
+    dictionary['character'] = list(set(character))
+    dictionary['tag'] = list(set(tag))
+    dictionary['artist'] = list(set(artist))
+    dictionary['group'] = list(set(group))
+    return dictionary
+
+
+def set_js_database(path : str):
+    with open(os.path.join(path, 'data.js'), 'w') as f:
+        indexed_json = merge_json(path)
+        unique_json = json.dumps(serialize_unique(indexed_json), separators=(',', ':'))
+        indexed_json = json.dumps(indexed_json, separators=(',', ':'))
+        f.write('var data = ' + indexed_json)
+        f.write(';\nvar tags = ' + unique_json)
