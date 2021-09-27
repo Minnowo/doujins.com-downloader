@@ -13,8 +13,11 @@ doujinsDotcom
 
 
 
-nHentai is a CLI tool for downloading doujinshi from <http://doujins.com>
+doujinsDotcom is a CLI tool for downloading doujinshi from <http://doujins.com>
 
+this is a modified copy of <https://github.com/Minnowo/nhentai-downloader>
+
+which is based on <https://github.com/RicterZ/nhentai>
 
 ===================
 Manual Installation
