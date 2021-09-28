@@ -37,31 +37,27 @@ def format_filename(path : str) -> str:
     while path.endswith("."):
         path = path[:-1]
 
-    if len(path) > 100:
-        path = path[:100] + u'…'
+    if len(path) > CONFIG['truncate']:
+        path = path[:CONFIG['truncate']] + u'…'
 
     return path
 
 
 def get_url_ext(url, includeDot = False):
-    ext = url.split(".")[-1]
+    ext = url.split(".")
 
-    if ext == "" or ext == None or len(ext) == 0:
+    if len(ext) < 2:
         return ""
 
-    if ext.find("?") != -1:
-        index = 0
-        for i in ext:
-            if i == "?":
-                break
-            index += 1
-        
+    ext = ext[-1]
+    index = ext.find("?")
+
+    if index != -1:
         ext = ext[:index]
 
     if includeDot:
         return "." + ext.lower().strip()
     return ext.lower().strip()
-
 
 def create_directory_from_file_name(path : str) -> bool:
     return create_directory(os.path.dirname(path))
