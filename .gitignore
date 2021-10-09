@@ -1,5 +1,6 @@
 doujinsDotcom/downloads
 doujinsDotcom/config.json
 doujinsDotcom/__pycache__
+scripts/__pycache__
 build/
 dist/

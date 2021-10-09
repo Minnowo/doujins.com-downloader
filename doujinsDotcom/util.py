@@ -1,23 +1,28 @@
-
+# -*- coding: utf-8 -*-
+# -
+# Alice Nyaa
+# https://github.com/Minnowo
+# 2021-10-09
+# -
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3 as
+# published by the Free Software Foundation.
 
 import os
-from signal import SIGINT
 import requests
 import json
 import sys
 
-try:
-    from logger import logger
-    from constants import USER_AGENT, ILLEGAL_FILENAME_CHARS, LOGIN_URL, CONFIG
-except ImportError:
-    from doujinsDotcom.logger import logger
-    from doujinsDotcom.constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS, CONFIG
+from signal import SIGINT
+
+from .logger import logger
+from .constants import USER_AGENT, ILLEGAL_FILENAME_CHARS, CONFIG, BASE_URL
 
 
 def request_helper(method : str, url : str, **kwargs) -> object:
     session = requests.Session()
     session.headers.update({
-        'Referer': LOGIN_URL,
+        'Referer': BASE_URL,
         'User-Agent': USER_AGENT,
         'Cookie': CONFIG['cookie']
         })
@@ -78,6 +83,15 @@ def list_dirs(path : str) -> list:
         os.chdir(current_directory)
 
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+    return os.path.join(base_path, relative_path)
 
 
 def format_doujin_string_(doujin : object, string : str) -> str:
@@ -157,9 +171,9 @@ def generate_html_viewer_(output_dir='.', output_file_name="index.html", doujins
             if os.path.splitext(image)[1] in ('.jpg', '.png'):
                 image_html += '<img src="{0}" class="image-item"/>\n'.format(image)
 
-    html = read_file('viewer/{}/index.html'.format(template))
-    css = read_file('viewer/{}/styles.css'.format(template))
-    js = read_file('viewer/{}/scripts.js'.format(template))
+    html = read_file(resource_path('viewer\\{}\\index.html'.format(template)))
+    css = read_file(resource_path('viewer\\{}\\styles.css'.format(template)))
+    js = read_file(resource_path('viewer\\{}\\scripts.js'.format(template)))
 
     if generate_meta:
         if sauce_file:
@@ -229,9 +243,9 @@ def generate_main_html(output_dir='./'):
 
     image_html = ''
 
-    main = read_file('viewer/main.html')
-    css = read_file('viewer/main.css')
-    js = read_file('viewer/main.js')
+    main = read_file(resource_path('viewer/main.html'))
+    css = read_file(resource_path('viewer/main.css'))
+    js = read_file(resource_path('viewer/main.js'))
 
     element = '\n\
             <div class="gallery-favorite">\n\

@@ -1,14 +1,15 @@
+# -*- coding: utf-8 -*-
+# -
+# Alice Nyaa
+# https://github.com/Minnowo
+# 2021-10-09
+# -
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3 as
+# published by the Free Software Foundation.
 
-import datetime
-
-try:
-    from constants import BASE_URL
-    from logger import logger
-    from helpers import format_filename
-except ImportError:
-    from doujinsDotcom.constants import BASE_URL
-    from doujinsDotcom.logger import logger
-    from doujinsDotcom.helpers import format_filename
+from .logger import logger
+from . import util
 
 class DoujinshiInfo(dict):
     def __init__(self, **kwargs):
@@ -39,7 +40,7 @@ class Doujinshi(object):
         _name_format = name_format.replace('%a', self.info.artists)
         _name_format = _name_format.replace('%t', self.name)
         _name_format = _name_format.replace('%p', self.pretty_name)
-        self.formated_name = format_filename(_name_format)
+        self.formated_name = util.format_filename(_name_format)
 
         self.table = [
             ["URL", self.url],
@@ -57,7 +58,7 @@ class Doujinshi(object):
         _name_format = new_name_format.replace('%a', self.info.artists)
         _name_format = _name_format.replace('%t', self.name)
         _name_format = _name_format.replace('%p', self.pretty_name)
-        self.formated_name = format_filename(_name_format)
+        self.formated_name = util.format_filename(_name_format)
 
 
     def update(self):

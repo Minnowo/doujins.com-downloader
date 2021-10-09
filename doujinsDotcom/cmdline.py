@@ -1,33 +1,26 @@
+# -*- coding: utf-8 -*-
+# -
+# Alice Nyaa
+# https://github.com/Minnowo
+# 2021-10-09
+# -
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3 as
+# published by the Free Software Foundation.
 
-import os
+import sys
 import json
 import argparse
-import sys
+import os.path
+
+from .logger import logger
+from .constants import DOUJINS_CONFIG_FILE, CONFIG, ILLEGAL_FILENAME_CHARS
 
 try:
     from urllib.parse import urlparse
 except ImportError:
     from urlparse import urlparse
 
-try:
-    from constants import ILLEGAL_FILENAME_CHARS, CONFIG, DOUJINS_HOME,DOUJINS_CONFIG_FILE
-    from logger import logger
-    from __init__ import __version__
-except ImportError:
-    from doujinsDotcom.constants import ILLEGAL_FILENAME_CHARS, CONFIG, DOUJINS_HOME, DOUJINS_CONFIG_FILE
-    from doujinsDotcom.logger import logger
-    from doujinsDotcom.__init__ import __version__
-
-def banner():
-    logger.info(u'''Doujins.com ver %s: 
- _____                             
-|     \  ___  _   _ _____ _          
-|  /\  |  _ \| | | |__   (_)_ ___  ____    ____  ___  __  __
-| (  ) | / \ | | | |_ | || | `_  \/  __\  |   _|/ _ \/  \/  \  
-|  \/  | \_/ | |_/ | \| || | | | |/\_  \ _|  (_| |_| | |\/| |
-|_____/ \___/ \__/\|\___/|_|_| |_|\___ /|_|____|\___/|_|  |_|
-
-''' % __version__)
 
 def load_config():
     if not os.path.exists(DOUJINS_CONFIG_FILE):

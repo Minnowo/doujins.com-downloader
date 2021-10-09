@@ -1,14 +1,22 @@
-# coding: utf-
+# -*- coding: utf-8 -*-
+# -
+# Alice Nyaa
+# https://github.com/Minnowo
+# 2021-10-09
+# -
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3 as
+# published by the Free Software Foundation.
 
-
-import multiprocessing
-import signal
 
 import sys
-import os
+import os.path
 import requests
-import time
-import re
+
+from re import search
+from time import sleep
+from signal import signal, SIGINT
+from multiprocessing import Semaphore, Pool
 
 from bs4 import BeautifulSoup
 
@@ -17,20 +25,14 @@ try:
 except ImportError:
     from urlparse import urlparse
 
-try:
-    from helpers import create_directory, request_helper, create_directory_from_file_name, get_url_ext
-    from constants import IMAGE_URL, CONFIG, BASE_URL
-    from doujinshi import Doujinshi, DoujinshiInfo
-    from logger import logger
-except ImportError:
-    from doujinsDotcom.helpers import create_directory, request_helper, create_directory_from_file_name, get_url_ext
-    from doujinsDotcom.constants import IMAGE_URL, CONFIG, BASE_URL
-    from doujinsDotcom.doujinshi import Doujinshi, DoujinshiInfo
-    from doujinsDotcom.logger import logger
+from .logger import logger
+from .constants import CONFIG
+from .doujinshi import Doujinshi, DoujinshiInfo
+from . import util
 
 requests.packages.urllib3.disable_warnings()
 
-semaphore = multiprocessing.Semaphore(1)
+semaphore = Semaphore(1)
 
 
 
@@ -50,7 +52,7 @@ class Downloader():
 
     def _download(self, url, folder='', filename='', retried=0, proxy=None):
         if self.delay:
-            time.sleep(self.delay)
+            sleep(self.delay)
 
         filename = filename if filename else os.path.basename(urlparse(url).path)
         base_filename, extension = os.path.splitext(filename)
@@ -71,7 +73,7 @@ class Downloader():
                 i = 0
                 while i < 10:
                     try:
-                        response = request_helper('get', url, stream=True, timeout=self.timeout, proxies=proxy)
+                        response = util.request_helper('get', url, stream=True, timeout=self.timeout, proxies=proxy)
                         if response.status_code != 200:
                             raise ImageNotExistsException
 
@@ -122,13 +124,13 @@ class Downloader():
 
         if not os.path.exists(folder):
             logger.warning('Path \'{0}\' does not exist, creating.'.format(folder))
-            if not create_directory(folder):
+            if not util.create_directory(folder):
                 logger.critical("Cannot create output folder, download canceled")
                 return
 
-        queue = [(self, url, folder, CONFIG['proxy'], str(index+1)+get_url_ext(url,True)) for index, url in enumerate(queue)]
+        queue = [(self, url, folder, CONFIG['proxy'], str(index+1) + util.get_url_ext(url,True)) for index, url in enumerate(queue)]
 
-        pool = multiprocessing.Pool(self.size, _init_worker)
+        pool = Pool(self.size, _init_worker)
         [pool.apply_async(_download_wrapper, args=item) for item in queue]
 
         pool.close()
@@ -186,7 +188,7 @@ class Downloader():
 
         for slider in images_area:
 
-            img = re.search(r'src=\"(.*?)\"', str(slider.find('img')))
+            img = search(r'src=\"(.*?)\"', str(slider.find('img')))
             if img:
                 page = img.group(1)
                 
@@ -195,7 +197,7 @@ class Downloader():
                 # they look like this    : https://static.doujins.com/n-ybqzb1dv.jpg?st=DIeNsEYQrnOyvHV1Y1D57g&amp;e=1632413343
                 # and if they have the 'amp;' after the get request, the url doesn't work
 
-                match = re.search(r'^(https|http)://static.doujins.com/(.*?)&(.*?);(.*?)$', page)
+                match = search(r'^(https|http)://static.doujins.com/(.*?)&(.*?);(.*?)$', page)
                 
                 if match:
                     # reformat the deconstructed url so that it doesn't contain the 'amp;' 
@@ -216,7 +218,7 @@ class Downloader():
         """Downloads the source of the given nhentai page and returns the contents as a byte[] or None."""
 
         try:
-            response = request_helper('get', url)
+            response = util.request_helper('get', url)
             
             if response.status_code == 200:
                 return response.content
@@ -227,7 +229,7 @@ class Downloader():
 
             else:
                 logger.warning('Slow down and retry ({}) ...'.format(url))
-                time.sleep(1)
+                sleep(1)
                 return Downloader.get_doujinshi_page(str(url))
         except:
             return None
@@ -243,7 +245,7 @@ def _download_wrapper(obj, url, folder='', proxy=None, filename=''):
 
 
 def _init_worker():
-    signal.signal(signal.SIGINT, _subprocess_signal)
+    signal(SIGINT, _subprocess_signal)
 
 
 def _subprocess_signal(signal, frame):
